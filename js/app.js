@@ -311,3 +311,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadComponents();
     initPage();
 });
+function setActiveLink() {
+    const path = window.location.pathname;
+    let currentPage = 'compression';
+    if (path.includes('webp') || path.includes('webp.html')) currentPage = 'webp';
+    else if (path.includes('avif') || path.includes('avif.html')) currentPage = 'avif';
+    else if (path.includes('alt-checker') || path.includes('alt-checker.html')) currentPage = 'alt-checker'; // <-- Cette ligne est importante
+    
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.toggle('active', link.dataset.page === currentPage);
+    });
+}

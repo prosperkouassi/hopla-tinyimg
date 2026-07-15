@@ -17,7 +17,23 @@
 </head>
 <body>
 
-    <div id="header-container"></div>
+    <div id="header-container">
+        <nav class="navbar">
+            <div class="nav-container">
+                <a href="index.html" class="logo">
+                    <div class="logo-icon">HG</div>
+                    <span class="logo-text">Hopla TinyImg</span>
+                </a>
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">☰</button>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="index.html" class="nav-link" data-page="compression">Compression</a></li>
+                    <li><a href="webp.html" class="nav-link" data-page="webp">Conversion WebP</a></li>
+                    <li><a href="avif.html" class="nav-link" data-page="avif">Conversion AVIF</a></li>
+                    <li><a href="alt-checker.html" class="nav-link active" data-page="alt-checker">Alt Checker</a></li>
+                </ul>
+            </div>
+        </nav>
+    </div>
 
     <div class="container">
         <div class="hero">
@@ -32,20 +48,39 @@
 
         <section class="tool-section">
             <div class="section-header">
-                <h2 class="section-title"> Image Alt Tag Checker</h2>
-                <p class="section-desc">Entrez l'URL de votre page pour analyser toutes les balises alt des images.</p>
+                <h2 class="section-title">🖼️ Image Alt Tag Checker</h2>
+                <p class="section-desc">Entrez l'URL de votre page ou collez directement son code source pour analyser les balises alt.</p>
             </div>
 
+            <!-- Méthode 1 : Par URL -->
             <div class="alt-checker-input">
+                <h3 style="color: var(--light); margin-bottom: 15px;">Méthode 1 : Par URL</h3>
                 <div class="input-group">
                     <input type="url" id="urlInput" placeholder="https://exemple.com/ma-page" class="url-input">
                     <button class="btn" id="checkBtn">
-                        <span>🔍</span> Analyser la page
+                        <span>🔍</span> Analyser l'URL
                     </button>
                 </div>
-                <p class="input-hint">Exemple : https://votre-site.com/page-a-analyser</p>
+                <p class="input-hint">⚠️ Certains sites (avec Cloudflare ou protections anti-bot) peuvent bloquer cette méthode.</p>
             </div>
 
+            <div class="divider">OU</div>
+
+            <!-- Méthode 2 : Par Code Source (Fallback fiable) -->
+            <div class="alt-checker-input">
+                <h3 style="color: var(--light); margin-bottom: 15px;">Méthode 2 : Par Code Source (Recommandé si l'URL échoue)</h3>
+                <p class="input-hint" style="text-align: left; margin-bottom: 10px;">
+                    1. Allez sur la page à analyser.<br>
+                    2. Faites <strong>Clic droit > Afficher le code source de la page</strong> (ou Ctrl+U).<br>
+                    3. Copiez tout le texte et collez-le ci-dessous.
+                </p>
+                <textarea id="htmlInput" class="html-textarea" placeholder="Collez le code source HTML de la page ici..."></textarea>
+                <button class="btn" id="checkHtmlBtn" style="margin-top: 15px; width: 100%;">
+                    <span>📋</span> Analyser le code collé
+                </button>
+            </div>
+
+            <!-- État de chargement -->
             <div id="loadingState" style="display: none;">
                 <div class="loading-container">
                     <div class="loading-spinner"></div>
@@ -53,6 +88,7 @@
                 </div>
             </div>
 
+            <!-- État des résultats -->
             <div id="resultsState" style="display: none;">
                 <div class="stats-grid">
                     <div class="stat-box">
@@ -83,32 +119,37 @@
                 </div>
 
                 <div class="recommendations">
-                    <h3> Recommandations</h3>
+                    <h3>💡 Recommandations</h3>
                     <ul id="recommendationsList"></ul>
                 </div>
             </div>
 
             <div class="features">
                 <div class="feature-card">
-                    <div class="feature-icon"></div>
+                    <div class="feature-icon">♿</div>
                     <h3 class="feature-title">Accessibilité</h3>
                     <p class="feature-text">Les balises alt permettent aux lecteurs d'écran de décrire les images aux utilisateurs malvoyants.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon"></div>
+                    <div class="feature-icon">🔍</div>
                     <h3 class="feature-title">SEO</h3>
-                    <p class="feature-text">Les moteurs de recherche utilisent le texte alt pour comprendre le contenu de vos images.</p>
+                    <p class="feature-text">Les moteurs de recherche utilisent le texte alt pour comprendre le contenu et le contexte de vos images.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">🎯</div>
                     <h3 class="feature-title">Meilleures Pratiques</h3>
-                    <p class="feature-text">Un bon alt text doit être concis (moins de 125 caractères) et descriptif.</p>
+                    <p class="feature-text">Un bon alt text doit être concis (moins de 125 caractères) et descriptif sans être redondant.</p>
                 </div>
             </div>
         </section>
     </div>
 
-    <div id="footer-container"></div>
+    <div id="footer-container">
+        <footer class="footer">
+            <p>Créé par <strong>HoplaGroupe</strong> &bull; <a href="https://hoplagroupe.com" target="_blank" rel="noopener noreferrer">hoplagroupe.com</a></p>
+            <p style="font-size: 13px; margin-top: 10px; opacity: 0.7;">&copy; 2024 Hopla TinyImg. Tous droits réservés.</p>
+        </footer>
+    </div>
 
     <script src="js/app.js"></script>
     <script src="js/alt-checker.js"></script>

@@ -1,0 +1,11 @@
+{
+  "mcp.configFile": "${workspaceFolder}/mcp-config.json",
+  "mcp.enable": true,
+  "mcp.servers": {
+    "21st-dev": {
+      "url": "https://21st.dev/api/mcp"
+    }
+  }
+  ,
+  "liveServer.settings.root": "/compress-webp"
+}

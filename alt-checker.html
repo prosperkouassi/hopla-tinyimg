@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; connect-src 'self' *;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/style.css">
+    
+    <title>Alt Text Checker - Hopla TinyImg</title>
+    <meta name="description" content="Analysez les balises alt de vos images pour améliorer l'accessibilité et le SEO de votre site web.">
+</head>
+<body>
+
+    <div id="header-container"></div>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Vérificateur de Texte Alternatif</h1>
+            <p>Analysez les balises alt de vos images pour améliorer l'accessibilité et le SEO de votre site web.</p>
+            <div>
+                <span class="badge">⚡ 100% Gratuit</span>
+                <span class="badge">🔍 Analyse complète</span>
+                <span class="badge">♿ Accessibilité</span>
+            </div>
+        </div>
+
+        <section class="tool-section">
+            <div class="section-header">
+                <h2 class="section-title"> Image Alt Tag Checker</h2>
+                <p class="section-desc">Entrez l'URL de votre page pour analyser toutes les balises alt des images.</p>
+            </div>
+
+            <div class="alt-checker-input">
+                <div class="input-group">
+                    <input type="url" id="urlInput" placeholder="https://exemple.com/ma-page" class="url-input">
+                    <button class="btn" id="checkBtn">
+                        <span>🔍</span> Analyser la page
+                    </button>
+                </div>
+                <p class="input-hint">Exemple : https://votre-site.com/page-a-analyser</p>
+            </div>
+
+            <div id="loadingState" style="display: none;">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p>Analyse en cours...</p>
+                </div>
+            </div>
+
+            <div id="resultsState" style="display: none;">
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-number" id="totalImages">0</div>
+                        <div class="stat-label">Total Images</div>
+                    </div>
+                    <div class="stat-box success">
+                        <div class="stat-number" id="validAlt">0</div>
+                        <div class="stat-label">Alt Valides</div>
+                    </div>
+                    <div class="stat-box warning">
+                        <div class="stat-number" id="missingAlt">0</div>
+                        <div class="stat-label">Alt Manquants</div>
+                    </div>
+                    <div class="stat-box error">
+                        <div class="stat-number" id="emptyAlt">0</div>
+                        <div class="stat-label">Alt Vides</div>
+                    </div>
+                    <div class="stat-box info">
+                        <div class="stat-number" id="longAlt">0</div>
+                        <div class="stat-label">Trop Longs</div>
+                    </div>
+                </div>
+
+                <div class="results-section">
+                    <h3>📊 Résultats Détaillés</h3>
+                    <div id="imagesList" class="images-list"></div>
+                </div>
+
+                <div class="recommendations">
+                    <h3> Recommandations</h3>
+                    <ul id="recommendationsList"></ul>
+                </div>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon"></div>
+                    <h3 class="feature-title">Accessibilité</h3>
+                    <p class="feature-text">Les balises alt permettent aux lecteurs d'écran de décrire les images aux utilisateurs malvoyants.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"></div>
+                    <h3 class="feature-title">SEO</h3>
+                    <p class="feature-text">Les moteurs de recherche utilisent le texte alt pour comprendre le contenu de vos images.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3 class="feature-title">Meilleures Pratiques</h3>
+                    <p class="feature-text">Un bon alt text doit être concis (moins de 125 caractères) et descriptif.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="footer-container"></div>
+
+    <script src="js/app.js"></script>
+    <script src="js/alt-checker.js"></script>
+</body>
+</html>

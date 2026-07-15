@@ -182,7 +182,7 @@ function displayResults(analysis, sourceName) {
     imagesList.innerHTML = '';
     
     if (analysis.total === 0) {
-        imagesList.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 20px;">Aucune image trouvée dans le code fourni.</p>';
+        imagesList.innerHTML = '<p style="text-align: center; color: var(--muted); padding: 20px;">Aucune image trouvée dans le code fourni.</p>';
     } else {
         analysis.images.forEach(img => {
             const item = document.createElement('div');

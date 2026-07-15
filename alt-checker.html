@@ -18,21 +18,23 @@
 <body>
 
     <div id="header-container">
-        <nav class="navbar">
+        <header class="site-header">
             <div class="nav-container">
                 <a href="index.html" class="logo">
                     <div class="logo-icon">HG</div>
                     <span class="logo-text">Hopla TinyImg</span>
                 </a>
-                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">☰</button>
-                <ul class="nav-menu" id="navMenu">
-                    <li><a href="index.html" class="nav-link" data-page="compression">Compression</a></li>
-                    <li><a href="webp.html" class="nav-link" data-page="webp">Conversion WebP</a></li>
-                    <li><a href="avif.html" class="nav-link" data-page="avif">Conversion AVIF</a></li>
-                    <li><a href="alt-checker.html" class="nav-link active" data-page="alt-checker">Alt Checker</a></li>
-                </ul>
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">Menu</button>
+                <nav>
+                    <ul class="nav-menu" id="navMenu">
+                        <li><a href="index.html" class="nav-link" data-page="compression">Compression</a></li>
+                        <li><a href="webp.html" class="nav-link" data-page="webp">Conversion WebP</a></li>
+                        <li><a href="avif.html" class="nav-link" data-page="avif">Conversion AVIF</a></li>
+                        <li><a href="alt-checker.html" class="nav-link active" data-page="alt-checker">Alt Checker</a></li>
+                    </ul>
+                </nav>
             </div>
-        </nav>
+        </header>
     </div>
 
     <div class="container">
@@ -54,7 +56,7 @@
 
             <!-- Méthode 1 : Par URL -->
             <div class="alt-checker-input">
-                <h3 style="color: var(--light); margin-bottom: 15px;">Méthode 1 : Par URL</h3>
+                <h3>Méthode 1 : Par URL</h3>
                 <div class="input-group">
                     <input type="url" id="urlInput" placeholder="https://exemple.com/ma-page" class="url-input">
                     <button class="btn" id="checkBtn">
@@ -68,7 +70,7 @@
 
             <!-- Méthode 2 : Par Code Source (Fallback fiable) -->
             <div class="alt-checker-input">
-                <h3 style="color: var(--light); margin-bottom: 15px;">Méthode 2 : Par Code Source (Recommandé si l'URL échoue)</h3>
+                <h3>Méthode 2 : Par Code Source (Recommandé si l'URL échoue)</h3>
                 <p class="input-hint" style="text-align: left; margin-bottom: 10px;">
                     1. Allez sur la page à analyser.<br>
                     2. Faites <strong>Clic droit > Afficher le code source de la page</strong> (ou Ctrl+U).<br>
@@ -146,8 +148,10 @@
 
     <div id="footer-container">
         <footer class="footer">
-            <p>Créé par <strong>HoplaGroupe</strong> &bull; <a href="https://hoplagroupe.com" target="_blank" rel="noopener noreferrer">hoplagroupe.com</a></p>
-            <p style="font-size: 13px; margin-top: 10px; opacity: 0.7;">&copy; 2024 Hopla TinyImg. Tous droits réservés.</p>
+            <div class="footer-inner">
+                <p>Créé par <strong>HoplaGroupe</strong> • <a href="https://hoplagroupe.com" target="_blank" rel="noopener noreferrer">hoplagroupe.com</a></p>
+                <p class="footer-note">&copy; 2024 Hopla TinyImg. Tous droits réservés.</p>
+            </div>
         </footer>
     </div>
 

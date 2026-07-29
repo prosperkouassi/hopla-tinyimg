@@ -74,6 +74,36 @@ function setButtonText(btn, icon, text) {
     btn.appendChild(document.createTextNode(text));
 }
 
+function createToastContainer() {
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container';
+        container.setAttribute('aria-live', 'assertive');
+        container.setAttribute('aria-atomic', 'true');
+        document.body.appendChild(container);
+    }
+    return container;
+}
+
+function showToast(message, type = 'error', duration = 4500) {
+    const container = createToastContainer();
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('visible'));
+
+    const hide = () => {
+        toast.classList.remove('visible');
+        toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+    };
+
+    setTimeout(hide, duration);
+}
+
 function formatSize(bytes) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -230,6 +260,110 @@ let files = [];
 let compressed = [];
 const MAX_FILES = 10;
 const MAX_SIZE = 5 * 1024 * 1024;
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+function invalidFile(reason) {
+    return { valid: false, reason, detectedType: null };
+}
+
+async function validateImageFile(file) {
+    if (!file || file.size === 0) {
+        return invalidFile('Le fichier est vide ou illisible.');
+    }
+
+    if (file.size > MAX_SIZE) {
+        return invalidFile('Le fichier dépasse 5 MB.');
+    }
+
+    const extension = getExtension(file.name);
+    if (!ALLOWED_EXTENSIONS.includes(extension)) {
+        return invalidFile('Extension non autorisée. Formats acceptés : JPG, JPEG, PNG, WEBP.');
+    }
+
+    if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
+        return invalidFile('Type MIME non autorisé.');
+    }
+
+    let bytes;
+    try {
+        bytes = await readFileHeader(file, 16);
+    } catch {
+        return invalidFile('Impossible de lire le fichier.');
+    }
+
+    const detectedType = detectImageType(bytes);
+    if (!detectedType) {
+        return invalidFile('Le fichier ne correspond pas à une vraie image JPG, PNG ou WEBP.');
+    }
+
+    if (!matchesExtension(detectedType, extension)) {
+        return invalidFile(`Incohérence détectée : le contenu du fichier semble être ${detectedType.toUpperCase()}, mais l'extension est .${extension}.`);
+    }
+
+    if (!matchesMime(detectedType, file.type)) {
+        return invalidFile(`Incohérence détectée : le contenu semble être ${detectedType.toUpperCase()}, mais le type MIME déclaré est ${file.type || 'inconnu'}.`);
+    }
+
+    return { valid: true, reason: '', detectedType };
+}
+
+function getExtension(filename) {
+    const name = String(filename || '');
+    const parts = name.toLowerCase().split('.');
+    return parts.length > 1 ? parts.pop().trim() : '';
+}
+
+function readFileHeader(file, length = 16) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        const blob = file.slice(0, length);
+
+        reader.onload = () => resolve(new Uint8Array(reader.result));
+        reader.onerror = () => reject(new Error('Lecture du fichier impossible.'));
+        reader.readAsArrayBuffer(blob);
+    });
+}
+
+function detectImageType(bytes) {
+    if (isJpeg(bytes)) return 'jpeg';
+    if (isPng(bytes)) return 'png';
+    if (isWebp(bytes)) return 'webp';
+    return null;
+}
+
+function isJpeg(bytes) {
+    return bytes.length >= 3 && bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF;
+}
+
+function isPng(bytes) {
+    const pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    return bytes.length >= pngSignature.length && pngSignature.every((byte, index) => bytes[index] === byte);
+}
+
+function isWebp(bytes) {
+    return bytes.length >= 12 &&
+        bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+        bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
+}
+
+function matchesExtension(detectedType, extension) {
+    const map = {
+        jpeg: ['jpg', 'jpeg'],
+        png: ['png'],
+        webp: ['webp']
+    };
+    return map[detectedType]?.includes(extension) ?? false;
+}
+
+function matchesMime(detectedType, mime) {
+    const map = {
+        jpeg: 'image/jpeg',
+        png: 'image/png',
+        webp: 'image/webp'
+    };
+    return !mime || map[detectedType] === mime;
+}
 
 // ========== DRAG & DROP ==========
 function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
@@ -415,16 +549,25 @@ function clearAll() {
     const fileInput = document.getElementById('fileInput'); if (fileInput) fileInput.value = '';
 }
 
-function handleFiles(fileList) {
-    files = Array.from(fileList).slice(0, MAX_FILES).filter(file => {
-        if (file.size > MAX_SIZE) { alert(`${file.name} dépasse 5 MB`); return false; }
-        return file.type.startsWith('image/');
-    });
-    
+async function handleFiles(fileList) {
+    const selectedFiles = Array.from(fileList).slice(0, MAX_FILES);
+    const validatedFiles = [];
+
+    for (const file of selectedFiles) {
+        const validation = await validateImageFile(file);
+        if (!validation.valid) {
+            showToast(`${file.name} : ${validation.reason}`, 'error');
+            continue;
+        }
+        validatedFiles.push(file);
+    }
+
+    files = validatedFiles;
+
     if (files.length > 0) {
         const controls = document.getElementById('controls'); if (controls) controls.style.display = 'flex';
         const actionBar = document.getElementById('actionBar'); if (actionBar) actionBar.style.display = 'flex';
-        const grid = document.getElementById('imagesGrid'); 
+        const grid = document.getElementById('imagesGrid');
         if (grid) { while (grid.firstChild) grid.removeChild(grid.firstChild); files.forEach((f, i) => grid.appendChild(createImageCard(f, i))); }
         updateStats();
     }

@@ -451,6 +451,57 @@ nav { flex: 1 1 auto; position: relative; } /* Permet à la zone de navigation d
 .limit-tag { background: var(--bg-alt); border: 1px solid var(--border); padding: 6px 12px; border-radius: 100px; font-size: 0.875rem; color: var(--text-muted); }
 .file-input { display: none; }
 
+.toast-container {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 1200;
+    pointer-events: none;
+    max-width: calc(100vw - 48px);
+}
+
+.toast {
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: rgba(24, 24, 24, 0.95);
+    color: white;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+    opacity: 0;
+    transform: translateY(24px);
+    transition: transform 0.35s ease, opacity 0.35s ease;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    border: 1px solid transparent;
+    min-width: 280px;
+    max-width: 420px;
+}
+
+.toast.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast.toast-error {
+    background: rgba(232, 69, 69, 0.96);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.toast.toast-success {
+    background: rgba(42, 183, 155, 0.96);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.toast strong {
+    font-weight: 700;
+}
+
 /* Boutons */
 .btn { display: inline-flex; align-items: center; gap: 8px; padding: 14px 28px; background: var(--primary); color: white; border: none; border-radius: 8px; font-family: var(--font-sans); font-size: 0.9rem; font-weight: 600; letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s ease; }
 .btn-primary { background: var(--primary); color: white; }

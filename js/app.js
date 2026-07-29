@@ -45,15 +45,21 @@ function initMobileMenu() {
     const btn = document.getElementById('mobileMenuBtn');
     const menu = document.getElementById('navMenu');
     if (btn && menu) {
-        btn.addEventListener('click', () => menu.classList.toggle('show'));
+        btn.addEventListener('click', () => {
+            menu.classList.toggle('show');
+            btn.setAttribute('aria-expanded', menu.classList.contains('show'));
+        });
     }
 }
 
 function setActiveLink() {
     const path = window.location.pathname;
     let currentPage = 'compression';
+    
     if (path.includes('webp')) currentPage = 'webp';
     else if (path.includes('avif')) currentPage = 'avif';
+    else if (path.includes('webm')) currentPage = 'webm'; // <-- AJOUT POUR WEBM
+    else if (path.includes('alt-checker')) currentPage = 'alt-checker';
     
     document.querySelectorAll('.nav-link').forEach(link => {
         link.classList.toggle('active', link.dataset.page === currentPage);
@@ -88,6 +94,7 @@ function detectPage() {
     const path = window.location.pathname;
     if (path.includes('webp')) return 'webp';
     if (path.includes('avif')) return 'avif';
+    if (path.includes('webm')) return 'webm'; // <-- AJOUT POUR WEBM
     return 'compression';
 }
 
@@ -300,6 +307,8 @@ function initPage() {
             updateStats();
         });
     }
+    // Note: La page 'webm' est gérée exclusivement par js/webm-converter.js, 
+    // donc nous n'avons pas besoin d'ajouter de logique ici pour 'webm'.
 
     document.getElementById('zipBtn')?.addEventListener('click', downloadAsZip);
     document.getElementById('downloadAllBtn')?.addEventListener('click', downloadAll);
@@ -311,14 +320,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadComponents();
     initPage();
 });
-function setActiveLink() {
-    const path = window.location.pathname;
-    let currentPage = 'compression';
-    if (path.includes('webp') || path.includes('webp.html')) currentPage = 'webp';
-    else if (path.includes('avif') || path.includes('avif.html')) currentPage = 'avif';
-    else if (path.includes('alt-checker') || path.includes('alt-checker.html')) currentPage = 'alt-checker'; // <-- Cette ligne est importante
-    
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.toggle('active', link.dataset.page === currentPage);
-    });
-}

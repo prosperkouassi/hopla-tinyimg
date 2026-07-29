@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; connect-src 'self';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/style.css">
+    
+    <title>Images vers WebM - Hopla TinyImg</title>
+    <meta name="description" content="Convertissez une séquence d'images en vidéo WebM directement dans votre navigateur. 100% privé et illimité.">
+</head>webm-converter.html
+<body>
+
+    <!-- Emplacement du header injecté par JavaScript -->
+    <div id="header-container">
+        <header class="site-header">
+            <div class="nav-container">
+                <a href="index.html" class="logo">
+                    <div class="logo-icon">HG</div>
+                    <span class="logo-text">Hopla TinyImg</span>
+                </a>
+                <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">Menu</button>
+                <nav>
+                    <ul class="nav-menu" id="navMenu">
+                        <li><a href="index.html" class="nav-link" data-page="compression">Compression</a></li>
+                        <li><a href="webp.html" class="nav-link" data-page="webp">Conversion WebP</a></li>
+                        <li><a href="avif.html" class="nav-link" data-page="avif">Conversion AVIF</a></li>
+                        <li><a href="webm-converter.html" class="nav-link" data-page="webm">Images vers WebM</a></li>
+                        <li><a href="alt-checker.html" class="nav-link" data-page="alt-checker">Alt Checker</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+    </div>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Convertisseur d'images en WebM</h1>
+            <p>Créez une vidéo fluide à partir d'une séquence d'images. Idéal pour les animations, timelapses et rendus 3D.</p>
+            <div>
+                <span class="badge">⚡ 100% Gratuit</span>
+                <span class="badge">🔒 100% Privé</span>
+                <span class="badge">📁 Dépôt de dossier illimité</span>
+            </div>
+        </div>
+
+        <section class="tool-section">
+            <div class="section-header">
+                <h2 class="section-title">🎬 Paramètres de la vidéo</h2>
+                <p class="section-desc">Ajustez la fluidité et la qualité avant de lancer l'encodage local.</p>
+            </div>
+            
+            <div class="controls">
+                <div class="slider-container">
+                    <label class="control-label" for="fps">Vitesse : <span id="fpsValue" class="quality-value" style="min-width: 60px; padding: 8px 12px; font-size: 0.9rem;">10</span> FPS</label>
+                    <input type="range" id="fps" class="slider" min="1" max="60" value="10">
+                </div>
+                <div class="slider-container">
+                    <label class="control-label" for="quality">Qualité vidéo : <span id="qualityValue" class="quality-value" style="min-width: 60px; padding: 8px 12px; font-size: 0.9rem;">80</span>%</label>
+                    <input type="range" id="quality" class="slider" min="10" max="100" step="10" value="80">
+                </div>
+            </div>
+
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">📁</div>
+                <h3 class="upload-title">Glissez un dossier ou des images ici</h3>
+                <p class="upload-text">ou cliquez pour sélectionner vos fichiers</p>
+                <input type="file" class="file-input" id="fileInput" multiple accept="image/png, image/jpeg, image/webp, image/avif" webkitdirectory directory>
+                <button class="btn" id="chooseFilesBtn">
+                    <span>📤</span> CHOISIR UN DOSSIER
+                </button>
+                <div class="upload-limits">
+                    <span class="limit-tag">PNG, JPG, WebP, AVIF</span>
+                    <span class="limit-tag">Tri automatique par nom</span>
+                    <span class="limit-tag">Aucune limite de quantité</span>
+                </div>
+            </div>
+
+            <div class="file-list-summary" id="fileList" style="display: none;"></div>
+
+            <div class="loading-container" id="statusContainer" style="display: none;">
+                <div class="loading" id="loadingSpinner"></div>
+                <p id="statusText" style="font-weight: 600; color: var(--text); margin-top: 10px;">Préparation...</p>
+                <div class="progress-container" style="width: 100%; max-width: 500px; margin-top: 12px;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-bar" id="actionBar" style="display: none;">
+                <button class="btn" id="convertBtn"><span>⚡</span> Convertir en WebM</button>
+                <button class="btn btn-danger" id="clearBtn"><span>🗑️</span> Effacer</button>
+            </div>
+
+            <div class="features" style="margin-top: 40px;">
+                <div class="feature-card">
+                    <div class="feature-icon">🎞️</div>
+                    <h3 class="feature-title">Séquence vers Vidéo</h3>
+                    <p class="feature-text">Assemblez automatiquement vos images dans l'ordre pour créer une animation fluide au format WebM.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3 class="feature-title">Optimisation mémoire</h3>
+                    <p class="feature-text">Le traitement charge les images une par une, permettant de convertir des centaines de fichiers sans saturer votre navigateur.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3 class="feature-title">Confidentialité totale</h3>
+                    <p class="feature-text">L'encodage vidéo se fait via l'API MediaRecorder de votre navigateur. Aucun fichier ne quitte votre ordinateur.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Emplacement du footer injecté par JavaScript -->
+    <div id="footer-container">
+        <footer class="footer">
+            <div class="footer-inner">
+                <p>Créé par <strong>HoplaGroupe</strong> • <a href="https://hoplagroupe.com" target="_blank" rel="noopener noreferrer">hoplagroupe.com</a></p>
+                <p class="footer-note">&copy; 2024 Hopla TinyImg. Tous droits réservés.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Canvas caché pour le rendu vidéo -->
+    <canvas id="canvas" style="display: none;"></canvas>
+
+    <script src="js/app.js"></script>
+    <script src="js/webm-converter.js"></script>
+</body>
+</html>

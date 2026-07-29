@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Replace https://example.com with your production domain before publishing -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://example.com/</loc>
+  </url>
+  <url>
+    <loc>https://example.com/index.html</loc>
+  </url>
+  <url>
+    <loc>https://example.com/compression.html</loc>
+  </url>
+  <url>
+    <loc>https://example.com/webp.html</loc>
+  </url>
+  <url>
+    <loc>https://example.com/avif.html</loc>
+  </url>
+  <url>
+    <loc>https://example.com/webm-converter.html</loc>
+  </url>
+  <url>
+    <loc>https://example.com/alt-checker.html</loc>
+  </url>
+  <url>
+    <loc>https://example.com/faq.html</loc>
+  </url>
+  <url>
+    <loc>https://example.com/contact.html</loc>
+  </url>
+</urlset>

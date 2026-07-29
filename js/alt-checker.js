@@ -179,62 +179,67 @@ function displayResults(analysis, sourceName) {
     document.getElementById('longAlt').textContent = analysis.tooLong;
     
     const imagesList = document.getElementById('imagesList');
-    imagesList.innerHTML = '';
-    
+    while (imagesList.firstChild) imagesList.removeChild(imagesList.firstChild);
+
     if (analysis.total === 0) {
-        imagesList.innerHTML = '<p style="text-align: center; color: var(--muted); padding: 20px;">Aucune image trouvée dans le code fourni.</p>';
+        const p = document.createElement('p');
+        p.textContent = 'Aucune image trouvée dans le code fourni.';
+        p.style.textAlign = 'center';
+        p.style.color = 'var(--muted)';
+        p.style.padding = '20px';
+        imagesList.appendChild(p);
     } else {
         analysis.images.forEach(img => {
             const item = document.createElement('div');
             item.className = 'image-item';
-            
+
             let statusClass = 'status-valid';
             let statusIcon = '✅';
             let statusText = 'Valide';
-            
-            if (!img.hasAlt) {
-                statusClass = 'status-error';
-                statusIcon = '❌';
-                statusText = 'Alt manquant';
-            } else if (img.isEmpty) {
-                statusClass = 'status-warning';
-                statusIcon = '⚠️';
-                statusText = 'Alt vide';
-            } else if (img.isTooLong) {
-                statusClass = 'status-info';
-                statusIcon = '📏';
-                statusText = 'Trop long';
+
+            if (!img.hasAlt) { statusClass = 'status-error'; statusIcon = '❌'; statusText = 'Alt manquant'; }
+            else if (img.isEmpty) { statusClass = 'status-warning'; statusIcon = '⚠️'; statusText = 'Alt vide'; }
+            else if (img.isTooLong) { statusClass = 'status-info'; statusIcon = '📏'; statusText = 'Trop long'; }
+
+            const header = document.createElement('div');
+            header.className = 'image-info-header';
+            const statusSpan = document.createElement('span'); statusSpan.className = `status-icon ${statusClass}`; statusSpan.textContent = statusIcon;
+            const numSpan = document.createElement('span'); numSpan.className = 'image-number'; numSpan.textContent = `Image ${img.index}`;
+            const statusTextSpan = document.createElement('span'); statusTextSpan.className = `status-text ${statusClass}`; statusTextSpan.textContent = statusText;
+            header.appendChild(statusSpan); header.appendChild(numSpan); header.appendChild(statusTextSpan);
+
+            const details = document.createElement('div'); details.className = 'image-details';
+            const srcRow = document.createElement('div'); srcRow.className = 'detail-row';
+            const srcLabel = document.createElement('strong'); srcLabel.textContent = 'Source:';
+            const srcSpan = document.createElement('span'); srcSpan.className = 'image-src'; srcSpan.textContent = truncateString(img.src, 80);
+            srcRow.appendChild(srcLabel); srcRow.appendChild(document.createTextNode(' ')); srcRow.appendChild(srcSpan);
+
+            details.appendChild(srcRow);
+
+            if (img.hasAlt) {
+                const altRow = document.createElement('div'); altRow.className = 'detail-row';
+                const altLabel = document.createElement('strong'); altLabel.textContent = `Alt (${img.altLength} car.):`;
+                const altSpan = document.createElement('span'); altSpan.className = 'alt-text'; altSpan.textContent = `"${img.alt}"`;
+                altRow.appendChild(altLabel); altRow.appendChild(document.createTextNode(' ')); altRow.appendChild(altSpan);
+                details.appendChild(altRow);
+            } else {
+                const altRow = document.createElement('div'); altRow.className = 'detail-row';
+                const altLabel = document.createElement('strong'); altLabel.textContent = 'Alt:';
+                const missing = document.createElement('span'); missing.className = 'missing'; missing.textContent = 'Non spécifié';
+                altRow.appendChild(altLabel); altRow.appendChild(document.createTextNode(' ')); altRow.appendChild(missing);
+                details.appendChild(altRow);
             }
-            
-            item.innerHTML = `
-                <div class="image-info-header">
-                    <span class="status-icon ${statusClass}">${statusIcon}</span>
-                    <span class="image-number">Image ${img.index}</span>
-                    <span class="status-text ${statusClass}">${statusText}</span>
-                </div>
-                <div class="image-details">
-                    <div class="detail-row">
-                        <strong>Source:</strong> 
-                        <span class="image-src">${escapeHTML(truncateString(img.src, 80))}</span>
-                    </div>
-                    ${img.hasAlt ? `
-                    <div class="detail-row">
-                        <strong>Alt (${img.altLength} car.):</strong> 
-                        <span class="alt-text">"${escapeHTML(img.alt)}"</span>
-                    </div>
-                    ` : '<div class="detail-row"><strong>Alt:</strong> <span class="missing">Non spécifié</span></div>'}
-                </div>
-            `;
+
+            item.appendChild(header);
+            item.appendChild(details);
             imagesList.appendChild(item);
         });
     }
     
     const recommendationsList = document.getElementById('recommendationsList');
-    recommendationsList.innerHTML = '';
+    while (recommendationsList.firstChild) recommendationsList.removeChild(recommendationsList.firstChild);
     analysis.recommendations.forEach(rec => {
-        const li = document.createElement('li');
-        li.textContent = rec;
-        recommendationsList.appendChild(li);
+        const li = document.createElement('li'); li.textContent = rec; recommendationsList.appendChild(li);
     });
     
     document.getElementById('resultsState').style.display = 'block';
@@ -243,9 +248,9 @@ function displayResults(analysis, sourceName) {
 
 function escapeHTML(str) {
     if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    return String(str).replace(/[&<>'"]/g, function (c) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c];
+    });
 }
 
 function truncateString(str, maxLength) {

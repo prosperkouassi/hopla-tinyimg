@@ -3,25 +3,29 @@ async function loadComponents() {
     try {
         const headerContainer = document.getElementById('header-container');
         const footerContainer = document.getElementById('footer-container');
-        const headerUrl = new URL('./components/header.html', window.location.href).href;
-        const footerUrl = new URL('./components/footer.html', window.location.href).href;
+        
+        // AJOUT DE '?v=' + Date.now() POUR FORCER LE RECHARGEMENT SANS CACHE
+        const headerUrl = new URL('./components/header.html', window.location.href).href + '?v=' + Date.now();
+        const footerUrl = new URL('./components/footer.html', window.location.href).href + '?v=' + Date.now();
 
         if (headerContainer) {
             const headerRes = await fetch(headerUrl);
-            if (!headerRes.ok) throw new Error(`Failed to load header: ${headerRes.status} ${headerRes.statusText}`);
+            if (!headerRes.ok) throw new Error(`Failed to load header: ${headerRes.status}`);
             const headerHtml = await headerRes.text();
-            headerContainer.innerHTML = headerHtml;
+            insertHTMLSafe(headerContainer, headerHtml);
         }
 
         if (footerContainer) {
             const footerRes = await fetch(footerUrl);
-            if (!footerRes.ok) throw new Error(`Failed to load footer: ${footerRes.status} ${footerRes.statusText}`);
+            if (!footerRes.ok) throw new Error(`Failed to load footer: ${footerRes.status}`);
             const footerHtml = await footerRes.text();
-            footerContainer.innerHTML = footerHtml;
+            insertHTMLSafe(footerContainer, footerHtml);
         }
 
         initMobileMenu();
+        initMegaMenu();
         setActiveLink();
+        initIframeLinks();
     } catch (error) {
         console.error('Erreur chargement des composants:', error);
     }
@@ -33,6 +37,43 @@ function escapeHTML(str) {
     return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag]));
 }
 
+// Insert HTML into a container safely by parsing and importing nodes (avoids direct innerHTML assignment)
+function insertHTMLSafe(container, html) {
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        // Remove existing children
+        while (container.firstChild) container.removeChild(container.firstChild);
+        // Move all body children
+        Array.from(doc.body.childNodes).forEach(node => {
+            container.appendChild(document.importNode(node, true));
+        });
+    } catch (err) {
+        // Fallback to safe text if parsing fails
+        container.textContent = html;
+        console.error('insertHTMLSafe failed:', err);
+    }
+}
+
+// Helper to set button content safely (with optional loading spinner)
+function setButtonLoading(btn, text) {
+    if (!btn) return;
+    while (btn.firstChild) btn.removeChild(btn.firstChild);
+    const spinner = document.createElement('span'); spinner.className = 'loading';
+    btn.appendChild(spinner);
+    btn.appendChild(document.createTextNode(' ' + text));
+}
+
+function setButtonText(btn, icon, text) {
+    if (!btn) return;
+    while (btn.firstChild) btn.removeChild(btn.firstChild);
+    if (icon) {
+        const span = document.createElement('span'); span.textContent = icon; btn.appendChild(span);
+        btn.appendChild(document.createTextNode(' '));
+    }
+    btn.appendChild(document.createTextNode(text));
+}
+
 function formatSize(bytes) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -41,6 +82,7 @@ function formatSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
+// ========== MENU MOBILE ==========
 function initMobileMenu() {
     const btn = document.getElementById('mobileMenuBtn');
     const menu = document.getElementById('navMenu');
@@ -52,14 +94,131 @@ function initMobileMenu() {
     }
 }
 
+// ========== MÉGA-MENU (AU CLIC) ==========
+function initMegaMenu() {
+    const dropdowns = document.querySelectorAll('.nav-item-dropdown');
+
+    dropdowns.forEach(dropdown => {
+        const trigger = dropdown.querySelector('.dropdown-trigger');
+
+        if (trigger) {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                const isOpen = dropdown.classList.contains('is-open') || dropdown.classList.contains('active');
+
+                // Ferme les autres dropdowns ouverts
+                dropdowns.forEach(other => {
+                    if (other !== dropdown) {
+                        other.classList.remove('active', 'is-open');
+                        other.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+                    }
+                });
+
+                // Toggle le dropdown actuel (ajoute à la fois .active et .is-open pour compatibilité)
+                if (!isOpen) {
+                    dropdown.classList.add('active', 'is-open');
+                    trigger.setAttribute('aria-expanded', 'true');
+                    // focuser le premier lien du mega-menu pour accessibilité
+                    dropdown.querySelector('.mega-menu-item')?.focus();
+                } else {
+                    dropdown.classList.remove('active', 'is-open');
+                    trigger.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+
+        // Ferme le menu quand on clique sur un lien à l'intérieur
+        const menuItems = dropdown.querySelectorAll('.mega-menu-item');
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                dropdown.classList.remove('active', 'is-open');
+                dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+            });
+        });
+    });
+
+    // Ferme tous les menus quand on clique à l'extérieur
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.nav-item-dropdown')) {
+            dropdowns.forEach(dropdown => {
+                dropdown.classList.remove('active', 'is-open');
+                dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+            });
+        }
+    });
+
+    // Fermer avec la touche Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            dropdowns.forEach(dropdown => {
+                dropdown.classList.remove('active', 'is-open');
+                dropdown.querySelector('.dropdown-trigger')?.setAttribute('aria-expanded', 'false');
+            });
+        }
+    });
+}
+
+// ========== IFRAME-LINKS (modal) ==========
+function initIframeLinks() {
+    document.querySelectorAll('[data-open-iframe]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const href = link.href;
+            openIframeModal(href);
+        });
+    });
+}
+
+function openIframeModal(url) {
+    // Prevent duplicates
+    if (document.querySelector('.iframe-modal')) return;
+
+    const modal = document.createElement('div');
+    modal.className = 'iframe-modal';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'iframe-wrap';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.setAttribute('aria-label', 'Outil WebM');
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'iframe-close';
+    closeBtn.innerText = '✕';
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', onKeyDown);
+
+    wrap.appendChild(closeBtn);
+    wrap.appendChild(iframe);
+    modal.appendChild(wrap);
+    document.body.appendChild(modal);
+
+    function closeModal() {
+        document.removeEventListener('keydown', onKeyDown);
+        modal.remove();
+    }
+
+    function onKeyDown(e) {
+        if (e.key === 'Escape') closeModal();
+    }
+}
+
+// ========== LIEN ACTIF ==========
 function setActiveLink() {
     const path = window.location.pathname;
-    let currentPage = 'compression';
+    let currentPage = 'home'; 
     
-    if (path.includes('webp')) currentPage = 'webp';
+    if (path.includes('compression')) currentPage = 'compression';
+    else if (path.includes('webp')) currentPage = 'webp';
     else if (path.includes('avif')) currentPage = 'avif';
-    else if (path.includes('webm')) currentPage = 'webm'; // <-- AJOUT POUR WEBM
+    else if (path.includes('webm')) currentPage = 'webm';
     else if (path.includes('alt-checker')) currentPage = 'alt-checker';
+    else if (path.includes('faq')) currentPage = 'faq';
+    else if (path.includes('contact')) currentPage = 'contact';
     
     document.querySelectorAll('.nav-link').forEach(link => {
         link.classList.toggle('active', link.dataset.page === currentPage);
@@ -69,7 +228,6 @@ function setActiveLink() {
 // ========== ÉTAT GLOBAL ==========
 let files = [];
 let compressed = [];
-let avifOutputFormat = 'png';
 const MAX_FILES = 10;
 const MAX_SIZE = 5 * 1024 * 1024;
 
@@ -94,33 +252,73 @@ function detectPage() {
     const path = window.location.pathname;
     if (path.includes('webp')) return 'webp';
     if (path.includes('avif')) return 'avif';
-    if (path.includes('webm')) return 'webm'; // <-- AJOUT POUR WEBM
-    return 'compression';
+    if (path.includes('compression')) return 'compression';
+    return 'home';
 }
 
 function createImageCard(file, index) {
     const card = document.createElement('div');
     card.className = 'image-card';
+
     const url = URL.createObjectURL(file);
-    card.innerHTML = `
-        <div class="image-preview">
-            <div class="preview-box">
-                <div class="preview-label">Original</div>
-                <img src="${url}" class="preview-image" alt="Aperçu">
-            </div>
-        </div>
-        <div class="image-info">
-            <div class="image-name">${escapeHTML(file.name)}</div>
-            <div class="size-comparison">
-                <span class="size-box size-original">${formatSize(file.size)}</span>
-                <span class="size-box size-compressed" id="compressed-${index}" style="display:none;"></span>
-                <span class="savings" id="savings-${index}" style="display:none;"></span>
-            </div>
-        </div>
-        <div class="action-buttons">
-            <button class="btn btn-small btn-success" id="download-${index}" style="display:none;">💾 Télécharger</button>
-        </div>
-    `;
+
+    const preview = document.createElement('div');
+    preview.className = 'image-preview';
+    const previewBox = document.createElement('div');
+    previewBox.className = 'preview-box';
+    const previewLabel = document.createElement('div');
+    previewLabel.className = 'preview-label';
+    previewLabel.textContent = 'Original';
+    const img = document.createElement('img');
+    img.src = url;
+    img.className = 'preview-image';
+    img.alt = `Aperçu de ${file.name}`;
+    img.decoding = 'async';
+    img.loading = 'lazy';
+    img.width = 300; img.height = 150;
+
+    previewBox.appendChild(previewLabel);
+    previewBox.appendChild(img);
+    preview.appendChild(previewBox);
+
+    const info = document.createElement('div');
+    info.className = 'image-info';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'image-name';
+    nameEl.textContent = file.name;
+    const sizeComp = document.createElement('div');
+    sizeComp.className = 'size-comparison';
+    const origSize = document.createElement('span');
+    origSize.className = 'size-box size-original';
+    origSize.textContent = formatSize(file.size);
+    const compSize = document.createElement('span');
+    compSize.className = 'size-box size-compressed';
+    compSize.id = `compressed-${index}`;
+    compSize.style.display = 'none';
+    const savings = document.createElement('span');
+    savings.className = 'savings';
+    savings.id = `savings-${index}`;
+    savings.style.display = 'none';
+
+    sizeComp.appendChild(origSize);
+    sizeComp.appendChild(compSize);
+    sizeComp.appendChild(savings);
+    info.appendChild(nameEl);
+    info.appendChild(sizeComp);
+
+    const actions = document.createElement('div');
+    actions.className = 'action-buttons';
+    const dlBtn = document.createElement('button');
+    dlBtn.className = 'btn btn-small btn-success';
+    dlBtn.id = `download-${index}`;
+    dlBtn.style.display = 'none';
+    dlBtn.textContent = '💾 Télécharger';
+    actions.appendChild(dlBtn);
+
+    card.appendChild(preview);
+    card.appendChild(info);
+    card.appendChild(actions);
+
     return card;
 }
 
@@ -167,7 +365,7 @@ function downloadAll() {
 async function downloadAsZip() {
     const zipBtn = document.getElementById('zipBtn');
     if (!zipBtn || !compressed.some(c => c)) return;
-    zipBtn.disabled = true; zipBtn.innerHTML = '<span class="loading"></span> ZIP...';
+    zipBtn.disabled = true; setButtonLoading(zipBtn, 'ZIP...');
 
     const zip = new JSZip();
     compressed.forEach(item => { if (item) zip.file(item.name, item.blob); });
@@ -178,10 +376,10 @@ async function downloadAsZip() {
         const a = document.createElement('a'); a.href = url; a.download = `hopla-tinyimg-${detectPage()}.zip`;
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         
-        zipBtn.innerHTML = '<span>✅</span> ZIP téléchargé !';
-        setTimeout(() => { zipBtn.disabled = false; zipBtn.innerHTML = '<span>📦</span> Télécharger en ZIP'; }, 3000);
+        setButtonText(zipBtn, '✅', 'ZIP téléchargé !');
+        setTimeout(() => { zipBtn.disabled = false; setButtonText(zipBtn, '📦', 'Télécharger en ZIP'); }, 3000);
     } catch (err) {
-        zipBtn.innerHTML = '<span>❌</span> Erreur'; zipBtn.disabled = false;
+        setButtonText(zipBtn, '❌', 'Erreur'); zipBtn.disabled = false;
     }
 }
 
@@ -208,7 +406,7 @@ function updateStats() {
 
 function clearAll() {
     files = []; compressed = [];
-    const grid = document.getElementById('imagesGrid'); if (grid) grid.innerHTML = '';
+    const grid = document.getElementById('imagesGrid'); if (grid) { while (grid.firstChild) grid.removeChild(grid.firstChild); }
     const controls = document.getElementById('controls'); if (controls) controls.style.display = 'none';
     const actionBar = document.getElementById('actionBar'); if (actionBar) actionBar.style.display = 'none';
     const stats = document.getElementById('stats'); if (stats) stats.style.display = 'none';
@@ -217,21 +415,17 @@ function clearAll() {
     const fileInput = document.getElementById('fileInput'); if (fileInput) fileInput.value = '';
 }
 
-function handleFiles(fileList, type) {
+function handleFiles(fileList) {
     files = Array.from(fileList).slice(0, MAX_FILES).filter(file => {
         if (file.size > MAX_SIZE) { alert(`${file.name} dépasse 5 MB`); return false; }
-        if (type === 'all') return file.type.startsWith('image/');
-        if (type === 'webp') return file.type.includes('png') || file.type.includes('jpeg') || file.type.includes('jpg');
-        if (type === 'avif') return file.type.includes('avif') || file.name.toLowerCase().endsWith('.avif');
-        return false;
+        return file.type.startsWith('image/');
     });
-    if (type === 'avif' && files.length === 0) { alert('Fichiers AVIF requis.'); return; }
     
     if (files.length > 0) {
         const controls = document.getElementById('controls'); if (controls) controls.style.display = 'flex';
         const actionBar = document.getElementById('actionBar'); if (actionBar) actionBar.style.display = 'flex';
         const grid = document.getElementById('imagesGrid'); 
-        if (grid) { grid.innerHTML = ''; files.forEach((f, i) => grid.appendChild(createImageCard(f, i))); }
+        if (grid) { while (grid.firstChild) grid.removeChild(grid.firstChild); files.forEach((f, i) => grid.appendChild(createImageCard(f, i))); }
         updateStats();
     }
 }
@@ -245,9 +439,8 @@ function initPage() {
     
     if (!uploadZone) return;
 
-    const type = page === 'webp' ? 'webp' : (page === 'avif' ? 'avif' : 'all');
-    setupDragAndDrop(uploadZone, (f) => handleFiles(f, type));
-    if (fileInput) fileInput.addEventListener('change', (e) => handleFiles(e.target.files, type));
+    setupDragAndDrop(uploadZone, handleFiles);
+    if (fileInput) fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
     if (chooseBtn) chooseBtn.addEventListener('click', () => fileInput && fileInput.click());
 
     if (page === 'compression') {
@@ -257,58 +450,16 @@ function initPage() {
         
         document.getElementById('compressBtn')?.addEventListener('click', async () => {
             const btn = document.getElementById('compressBtn');
-            btn.disabled = true; btn.innerHTML = '<span class="loading"></span> Compression...';
+            btn.disabled = true; setButtonLoading(btn, 'Compression...');
             compressed = [];
             const q = qSlider ? parseInt(qSlider.value) / 100 : 0.8;
             for (let i = 0; i < files.length; i++) await convertImage(files[i], i, q, 'image/webp', '.webp');
-            btn.disabled = false; btn.innerHTML = '<span>⚡</span> Compresser tout';
+            btn.disabled = false; setButtonText(btn, '⚡', 'Compresser tout');
             document.getElementById('downloadAllBtn').disabled = false;
             document.getElementById('zipBtn').disabled = false;
             updateStats();
         });
     } 
-    else if (page === 'webp') {
-        document.getElementById('convertBtn')?.addEventListener('click', async () => {
-            const btn = document.getElementById('convertBtn');
-            btn.disabled = true; btn.innerHTML = '<span class="loading"></span> Conversion...';
-            compressed = [];
-            for (let i = 0; i < files.length; i++) await convertImage(files[i], i, 0.85, 'image/webp', '.webp');
-            btn.disabled = false; btn.innerHTML = '<span>🔄</span> Convertir en WebP';
-            document.getElementById('downloadAllBtn').disabled = false;
-            document.getElementById('zipBtn').disabled = false;
-            updateStats();
-        });
-    } 
-    else if (page === 'avif') {
-        document.querySelectorAll('.format-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                avifOutputFormat = btn.dataset.format;
-                document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
-        });
-        document.querySelectorAll('.quick-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                avifOutputFormat = btn.dataset.quick;
-                document.querySelectorAll('.format-btn').forEach(b => b.classList.toggle('active', b.dataset.format === avifOutputFormat));
-            });
-        });
-
-        document.getElementById('convertBtn')?.addEventListener('click', async () => {
-            const btn = document.getElementById('convertBtn');
-            btn.disabled = true; btn.innerHTML = '<span class="loading"></span> Conversion...';
-            compressed = [];
-            const mime = avifOutputFormat === 'png' ? 'image/png' : 'image/jpeg';
-            const ext = avifOutputFormat === 'png' ? '.png' : '.jpg';
-            for (let i = 0; i < files.length; i++) await convertImage(files[i], i, 0.92, mime, ext);
-            btn.disabled = false; btn.innerHTML = '<span>🔄</span> Convertir';
-            document.getElementById('downloadAllBtn').disabled = false;
-            document.getElementById('zipBtn').disabled = false;
-            updateStats();
-        });
-    }
-    // Note: La page 'webm' est gérée exclusivement par js/webm-converter.js, 
-    // donc nous n'avons pas besoin d'ajouter de logique ici pour 'webm'.
 
     document.getElementById('zipBtn')?.addEventListener('click', downloadAsZip);
     document.getElementById('downloadAllBtn')?.addEventListener('click', downloadAll);

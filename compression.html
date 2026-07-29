@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' https://cdnjs.cloudflare.com; connect-src 'self';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="Content-Security-Policy"
+content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+        <title>Compression d'images - Hopla TinyImg | Outil WebP et optimisation</title>
+        <meta name="description" content="Outil de compression d'images local : convertissez PNG/JPG en WebP, optimisez la taille et téléchargez rapidement. Gratuit et privé.">
+        <link rel="canonical" href="/compression.html">
+        <meta name="robots" content="index,follow">
+
+        <!-- Open Graph -->
+        <meta property="og:site_name" content="Hopla TinyImg">
+        <meta property="og:type" content="website">
+        <meta property="og:title" content="Compression d'images - Hopla TinyImg">
+        <meta property="og:description" content="Convertissez et compressez vos images localement en WebP/PNG/JPEG. Facile, rapide et privé.">
+        <meta property="og:url" content="/compression.html">
+        <meta property="og:image" content="/assets/logo.png">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="Compression d'images - Hopla TinyImg">
+        <meta name="twitter:description" content="Convertissez et compressez vos images localement en WebP/PNG/JPEG. Facile, rapide et privé.">
+        <meta name="twitter:image" content="/assets/logo.png">
+
+        <!-- Structured Data (SoftwareApplication) -->
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Hopla TinyImg",
+            "url": "/compression.html",
+            "applicationCategory": "ImageProcessing",
+            "operatingSystem": "All",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
+        }
+        </script>
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <main id="main-content">
+    <div class="container">
+        <div class="hero">
+            <h1>Optimisez vos images en un clic</h1>
+            <p>Compressez et convertissez vos images PNG/JPG aux formats WebP, PNG ou JPEG.</p>
+            <div>
+                <span class="badge">⚡ 100% Gratuit</span>
+                <span class="badge">🔒 100% Privé</span>
+                <span class="badge">📦 Jusqu'à 10 fichiers</span>
+            </div>
+        </div>
+
+        <section class="tool-section">
+            <div class="section-header">
+                <span class="section-label">OUTIL PRINCIPAL</span>
+                <h2 class="section-title">🗜️ Compression d'images</h2>
+                <p class="section-desc">Réduisez la taille de vos images tout en préservant leur qualité visuelle.</p>
+            </div>
+            
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">📁</div>
+                <h3 class="upload-title">Glissez-déposez vos images</h3>
+                <p class="upload-text">ou cliquez pour sélectionner des fichiers</p>
+                <input type="file" class="file-input" id="fileInput" multiple accept="image/*">
+                <button class="btn btn-primary" id="chooseFilesBtn"><span>📤</span> Choisir des fichiers</button>
+                <div class="upload-limits">
+                    <span class="limit-tag">PNG • JPG • JPEG • GIF • BMP</span>
+                    <span class="limit-tag">Max 10 fichiers</span>
+                    <span class="limit-tag">5 MB par fichier</span>
+                </div>
+            </div>
+
+            <div class="controls" id="controls" style="display: none;">
+                <span class="control-label">Qualité de compression :</span>
+                <div class="slider-container">
+                    <input type="range" class="slider" id="qualitySlider" min="1" max="100" value="80">
+                </div>
+                <span class="quality-value" id="qualityValue">80%</span>
+            </div>
+
+            <div class="action-bar" id="actionBar" style="display: none;">
+                <button class="btn btn-primary" id="compressBtn"><span>⚡</span> Compresser tout</button>
+                <button class="btn btn-zip" id="zipBtn" disabled><span>📦</span> Télécharger en ZIP</button>
+                <button class="btn btn-success" id="downloadAllBtn" disabled><span>💾</span> Fichiers séparés</button>
+                <button class="btn btn-danger" id="clearBtn"><span>🗑️</span> Effacer</button>
+            </div>
+
+            <div class="stats-container" id="stats" style="display: none;">
+                <div class="stat-card"><div class="stat-value" id="totalFiles">0</div><div class="stat-label">Fichiers traités</div></div>
+                <div class="stat-card"><div class="stat-value" id="originalSize">0 KB</div><div class="stat-label">Taille originale</div></div>
+                <div class="stat-card"><div class="stat-value" id="compressedSize">0 KB</div><div class="stat-label">Taille compressée</div></div>
+                <div class="stat-card"><div class="stat-value" id="savingsPercent">0%</div><div class="stat-label">Économie</div></div>
+            </div>
+
+            <div class="images-grid" id="imagesGrid"></div>
+        </section>
+    </div>
+    </main>
+
+    <div id="footer-container"></div>
+    <script src="js/app.js"></script>
+</body>
+</html>

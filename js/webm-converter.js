@@ -72,18 +72,18 @@ document.addEventListener('DOMContentLoaded', () => {
         actionBar.style.display = 'flex';
         statusContainer.style.display = 'none';
         
-        let listHTML = `<strong>${selectedFiles.length} image(s) prête(s) à être convertie(s) :</strong><ul>`;
-        
+        while (fileListEl.firstChild) fileListEl.removeChild(fileListEl.firstChild);
+        const strong = document.createElement('strong'); strong.textContent = `${selectedFiles.length} image(s) prête(s) à être convertie(s) :`;
+        fileListEl.appendChild(strong);
+        const ul = document.createElement('ul');
         const displayCount = Math.min(selectedFiles.length, 5);
         for (let i = 0; i < displayCount; i++) {
-            listHTML += `<li>• ${selectedFiles[i].name}</li>`;
+            const li = document.createElement('li'); li.textContent = `• ${selectedFiles[i].name}`; ul.appendChild(li);
         }
-        
         if (selectedFiles.length > 5) {
-            listHTML += `<li><em>... et ${selectedFiles.length - 5} autres.</em></li>`;
+            const li = document.createElement('li'); const em = document.createElement('em'); em.textContent = `... et ${selectedFiles.length - 5} autres.`; li.appendChild(em); ul.appendChild(li);
         }
-        listHTML += `</ul>`;
-        fileListEl.innerHTML = listHTML;
+        fileListEl.appendChild(ul);
         
         convertBtn.disabled = false;
     }

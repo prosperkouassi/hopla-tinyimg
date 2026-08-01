@@ -1,0 +1,28 @@
+[build]
+  publish = "."
+  command = "echo 'No build step required'"
+
+[[redirects]]
+  from = "/accueil"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/webp"
+  to = "/webp.html"
+  status = 200
+
+[[redirects]]
+  from = "/avif"
+  to = "/avif.html"
+  status = 200
+
+[[redirects]]
+  from = "/compression"
+  to = "/compression.html"
+  status = 200
+
+[[redirects]]
+  from = "/webm"
+  to = "/webm-converter.html"
+  status = 200

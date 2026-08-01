@@ -600,6 +600,59 @@ nav { flex: 1 1 auto; position: relative; } /* Permet à la zone de navigation d
 .contact-email-box:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); box-shadow: 0 12px 32px var(--shadow-hover); }
 .contact-email-box svg { color: var(--primary); }
 
+/* ========== ALT CHECKER: Method 1 & 2 Styles ========== */
+.alt-checker-input {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+}
+
+.alt-checker-input .input-group {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.url-input {
+    flex: 1 1 auto;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--bg);
+}
+
+.alt-checker-input .btn {
+    flex: 0 0 auto;
+    padding: 12px 18px;
+    font-size: 0.95rem;
+}
+
+.html-textarea {
+    width: 100%;
+    min-height: 260px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Courier New', monospace;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--bg-alt);
+    resize: vertical;
+}
+
+.alt-checker-input .input-hint { display: block; margin-top: 8px; color: var(--text-muted); font-size: 0.9rem; }
+
+/* Responsive tweaks */
+@media (max-width: 720px) {
+    .alt-checker-input .input-group { flex-direction: column; align-items: stretch; }
+    .alt-checker-input .btn { width: 100%; }
+}
+
 /* FAQ */
 .faq-list { display: flex; flex-direction: column; gap: 16px; }
 .faq-item { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: border-color 0.2s ease; }

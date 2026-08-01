@@ -1,200 +1,343 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // Éléments du DOM
-    const uploadZone = document.getElementById('uploadZone');
-    const fileInput = document.getElementById('fileInput');
-    const chooseFilesBtn = document.getElementById('chooseFilesBtn');
+// ========== ÉTAT GLOBAL POUR WEBM CONVERTER ==========
+let webmFiles = [];
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/avif'];
+
+console.log('🎬 webm-converter.js chargé');
+
+// ========== UTILITAIRES ==========
+function sortFilesNaturally(files) {
+    return files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+}
+
+function loadImage(file) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            URL.revokeObjectURL(url); // Libération immédiate de la mémoire
+            resolve(img);
+        };
+        img.onerror = (e) => {
+            URL.revokeObjectURL(url);
+            reject(e);
+        };
+        img.src = url;
+    });
+}
+
+// ========== GESTION DES FICHIERS ==========
+function handleWebmFiles(files) {
+    // Filtrer uniquement les images valides
+    const validFiles = Array.from(files).filter(f => ALLOWED_IMAGE_TYPES.includes(f.type));
+    
+    if (validFiles.length === 0) {
+        showToast("Veuillez sélectionner des fichiers image valides (PNG, JPG, WebP, AVIF).", 'warning');
+        return;
+    }
+
+    // Tri naturel (img2.jpg avant img10.jpg)
+    webmFiles = sortFilesNaturally(validFiles);
+    
+    console.log(`✅ ${webmFiles.length} images chargées et triées`);
+
+    // Mise à jour de l'interface
     const fileListEl = document.getElementById('fileList');
     const actionBar = document.getElementById('actionBar');
+    
+    if (fileListEl) {
+        fileListEl.style.display = 'block';
+        while (fileListEl.firstChild) fileListEl.removeChild(fileListEl.firstChild);
+        
+        const strong = document.createElement('strong'); 
+        strong.textContent = `${webmFiles.length} image(s) prête(s) à être convertie(s) :`;
+        fileListEl.appendChild(strong);
+        
+        const ul = document.createElement('ul');
+        const displayCount = Math.min(webmFiles.length, 5);
+        
+        for (let i = 0; i < displayCount; i++) {
+            const li = document.createElement('li'); 
+            li.textContent = `• ${webmFiles[i].name}`; 
+            ul.appendChild(li);
+        }
+        
+        if (webmFiles.length > 5) {
+            const li = document.createElement('li'); 
+            const em = document.createElement('em'); 
+            em.textContent = `... et ${webmFiles.length - 5} autres.`; 
+            li.appendChild(em); 
+            ul.appendChild(li);
+        }
+        fileListEl.appendChild(ul);
+    }
+    
+    if (actionBar) actionBar.style.display = 'flex';
+    
+    const convertBtn = document.getElementById('convertBtn');
+    if (convertBtn) convertBtn.disabled = false;
+}
+
+// ========== MISE À JOUR DU STATUT ==========
+function updateWebmStatus(text, percent, isLoading = false) {
+    const statusText = document.getElementById('statusText');
+    const progressFill = document.getElementById('progressFill');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    
+    if (statusText) statusText.textContent = text;
+    if (progressFill) progressFill.style.width = `${percent}%`;
+    if (loadingSpinner) loadingSpinner.style.display = isLoading ? 'inline-block' : 'none';
+}
+
+// ========== CONVERSION EN WEBM ==========
+async function startWebmConversion() {
+    if (webmFiles.length === 0) {
+        showToast('Veuillez d\'abord sélectionner des images', 'warning');
+        return;
+    }
+
     const convertBtn = document.getElementById('convertBtn');
     const clearBtn = document.getElementById('clearBtn');
     const statusContainer = document.getElementById('statusContainer');
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    const statusText = document.getElementById('statusText');
-    const progressFill = document.getElementById('progressFill');
     const canvas = document.getElementById('canvas');
+    
+    if (!canvas) {
+        showToast('Erreur : Canvas non trouvé', 'error');
+        return;
+    }
+    
     const ctx = canvas.getContext('2d');
 
-    let selectedFiles = [];
+    console.log('🚀 Début de la conversion WebM');
+    
+    if (convertBtn) convertBtn.disabled = true;
+    if (clearBtn) clearBtn.disabled = true;
+    if (statusContainer) statusContainer.style.display = 'flex';
+    
+    updateWebmStatus('Initialisation du moteur de rendu...', 5, true);
 
-    // Mise à jour des affichages de paramètres
-    document.getElementById('fps').addEventListener('input', (e) => {
-        document.getElementById('fpsValue').textContent = e.target.value;
-    });
+    const fpsInput = document.getElementById('fps');
+    const qualityInput = document.getElementById('quality');
     
-    document.getElementById('quality').addEventListener('input', (e) => {
-        document.getElementById('qualityValue').textContent = e.target.value;
-    });
+    const fps = fpsInput ? parseInt(fpsInput.value) : 10;
+    const qualityPercent = qualityInput ? parseInt(qualityInput.value) : 80;
+    const quality = qualityPercent / 100;
 
-    // Gestion du Drag & Drop
-    uploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadZone.classList.add('dragover');
-    });
-    
-    uploadZone.addEventListener('dragleave', () => {
-        uploadZone.classList.remove('dragover');
-    });
-    
-    uploadZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadZone.classList.remove('dragover');
-        handleFiles(e.dataTransfer.files);
-    });
-    
-    // Clic sur la zone ou le bouton déclenche l'input
-    chooseFilesBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        fileInput.click();
-    });
-    
-    uploadZone.addEventListener('click', () => {
-        fileInput.click();
-    });
+    try {
+        // 1. Charger la première image pour définir la résolution
+        updateWebmStatus('Lecture des dimensions de la première image...', 10, true);
+        const firstImg = await loadImage(webmFiles[0]);
+        canvas.width = firstImg.width;
+        canvas.height = firstImg.height;
+        console.log(`📐 Résolution vidéo : ${canvas.width}x${canvas.height}`);
 
-    fileInput.addEventListener('change', (e) => {
-        handleFiles(e.target.files);
-    });
-
-    function handleFiles(files) {
-        // Filtrer uniquement les images
-        selectedFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+        // 2. Configuration du MediaRecorder
+        const mimeType = MediaRecorder.isTypeSupported('video/webm; codecs=vp9') 
+            ? 'video/webm; codecs=vp9' 
+            : 'video/webm';
         
-        if (selectedFiles.length === 0) {
-            alert("Veuillez sélectionner des fichiers image valides (PNG, JPG, WebP, AVIF).");
-            return;
+        const stream = canvas.captureStream(fps);
+        const mediaRecorder = new MediaRecorder(stream, {
+            mimeType: mimeType,
+            videoBitsPerSecond: quality * 5000000 // Bitrate dynamique basé sur la qualité
+        });
+
+        const chunks = [];
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) chunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+            console.log('🛑 Enregistrement arrêté, création du Blob...');
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            
+            // Téléchargement automatique
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hopla-animation-${Date.now()}.webm`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+            updateWebmStatus('✅ Conversion terminée ! Téléchargement lancé.', 100, false);
+            showToast('Vidéo WebM créée avec succès !', 'success');
+            
+            if (convertBtn) convertBtn.disabled = false;
+            if (clearBtn) clearBtn.disabled = false;
+        };
+
+        mediaRecorder.start();
+        console.log('🔴 Enregistrement démarré');
+
+        // 3. Boucle de rendu image par image
+        const frameDuration = 1000 / fps;
+        
+        for (let i = 0; i < webmFiles.length; i++) {
+            const percent = 15 + ((i / webmFiles.length) * 85);
+            updateWebmStatus(`Traitement de l'image ${i + 1} sur ${webmFiles.length}...`, percent, true);
+            
+            const img = await loadImage(webmFiles[i]);
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Nettoyer le canvas
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            // Attendre la durée d'une frame pour respecter le FPS
+            await new Promise(resolve => setTimeout(resolve, frameDuration));
         }
 
-        // Tri naturel pour que img2.jpg vienne avant img10.jpg
-        selectedFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+        console.log('🏁 Fin de la boucle d\'images, arrêt de l\'enregistrement...');
+        mediaRecorder.stop();
+
+    } catch (error) {
+        console.error('❌ Erreur de conversion WebM:', error);
+        updateWebmStatus('❌ Une erreur est survenue lors de la conversion.', 0, false);
+        showToast(`Erreur: ${error.message}`, 'error');
         
-        // Affichage de la liste résumée
-        fileListEl.style.display = 'block';
-        actionBar.style.display = 'flex';
-        statusContainer.style.display = 'none';
-        
-        while (fileListEl.firstChild) fileListEl.removeChild(fileListEl.firstChild);
-        const strong = document.createElement('strong'); strong.textContent = `${selectedFiles.length} image(s) prête(s) à être convertie(s) :`;
-        fileListEl.appendChild(strong);
-        const ul = document.createElement('ul');
-        const displayCount = Math.min(selectedFiles.length, 5);
-        for (let i = 0; i < displayCount; i++) {
-            const li = document.createElement('li'); li.textContent = `• ${selectedFiles[i].name}`; ul.appendChild(li);
-        }
-        if (selectedFiles.length > 5) {
-            const li = document.createElement('li'); const em = document.createElement('em'); em.textContent = `... et ${selectedFiles.length - 5} autres.`; li.appendChild(em); ul.appendChild(li);
-        }
-        fileListEl.appendChild(ul);
-        
-        convertBtn.disabled = false;
+        if (convertBtn) convertBtn.disabled = false;
+        if (clearBtn) clearBtn.disabled = false;
+    }
+}
+
+// ========== RÉINITIALISATION ==========
+function clearWebmConverter() {
+    webmFiles = [];
+    
+    const fileInput = document.getElementById('fileInput');
+    const fileListEl = document.getElementById('fileList');
+    const actionBar = document.getElementById('actionBar');
+    const statusContainer = document.getElementById('statusContainer');
+    const convertBtn = document.getElementById('convertBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    
+    if (fileInput) fileInput.value = '';
+    if (fileListEl) fileListEl.style.display = 'none';
+    if (actionBar) actionBar.style.display = 'none';
+    if (statusContainer) statusContainer.style.display = 'none';
+    if (convertBtn) convertBtn.disabled = true;
+    if (clearBtn) clearBtn.disabled = false;
+    
+    console.log('🗑️ Convertisseur WebM réinitialisé');
+}
+
+// ========== INITIALISATION DE LA PAGE ==========
+function initWebmConverterPage() {
+    console.log('🚀 Initialisation du convertisseur WebM');
+    
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const chooseFilesBtn = document.getElementById('chooseFilesBtn');
+    const convertBtn = document.getElementById('convertBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const fpsSlider = document.getElementById('fps');
+    const qualitySlider = document.getElementById('quality');
+
+    if (!uploadZone) {
+        console.error('❌ uploadZone non trouvé');
+        return;
     }
 
-    // Fonction utilitaire pour charger une image sans fuite de mémoire
-    function loadImage(file) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            const url = URL.createObjectURL(file);
-            img.onload = () => {
-                URL.revokeObjectURL(url); // Libération immédiate de la mémoire
-                resolve(img);
-            };
-            img.onerror = reject;
-            img.src = url;
+    // Gestion des sliders
+    if (fpsSlider) {
+        fpsSlider.addEventListener('input', (e) => {
+            const valEl = document.getElementById('fpsValue');
+            if (valEl) valEl.textContent = e.target.value;
+        });
+    }
+    
+    if (qualitySlider) {
+        qualitySlider.addEventListener('input', (e) => {
+            const valEl = document.getElementById('qualityValue');
+            if (valEl) valEl.textContent = e.target.value;
         });
     }
 
-    function updateStatus(text, percent, isLoading = false) {
-        statusText.textContent = text;
-        progressFill.style.width = `${percent}%`;
-        loadingSpinner.style.display = isLoading ? 'inline-block' : 'none';
-    }
-
-    // Cœur de la conversion
-    convertBtn.addEventListener('click', async () => {
-        if (selectedFiles.length === 0) return;
-
-        convertBtn.disabled = true;
-        clearBtn.disabled = true;
-        statusContainer.style.display = 'flex';
-        updateStatus('Initialisation du moteur de rendu...', 5, true);
-
-        const fps = parseInt(document.getElementById('fps').value);
-        const qualityPercent = parseInt(document.getElementById('quality').value);
-        const quality = qualityPercent / 100;
-
-        try {
-            // Charger la première image pour définir la taille du canvas (résolution de la vidéo)
-            updateStatus('Lecture des dimensions de la première image...', 10, true);
-            const firstImg = await loadImage(selectedFiles[0]);
-            canvas.width = firstImg.width;
-            canvas.height = firstImg.height;
-
-            // Configuration du MediaRecorder
-            const mimeType = MediaRecorder.isTypeSupported('video/webm; codecs=vp9') 
-                ? 'video/webm; codecs=vp9' 
-                : 'video/webm';
-            
-            const stream = canvas.captureStream(fps);
-            const mediaRecorder = new MediaRecorder(stream, {
-                mimeType: mimeType,
-                videoBitsPerSecond: quality * 5000000 // Ex: 0.8 * 5Mbps = 4Mbps
-            });
-
-            const chunks = [];
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) chunks.push(e.data);
-            };
-
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'video/webm' });
-                const url = URL.createObjectURL(blob);
-                
-                // Déclencher le téléchargement
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `animation_hopla_${Date.now()}.webm`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                updateStatus('✅ Conversion terminée ! Téléchargement lancé.', 100, false);
-                convertBtn.disabled = false;
-                clearBtn.disabled = false;
-            };
-
-            mediaRecorder.start();
-
-            // Boucle de rendu image par image
-            const frameDuration = 1000 / fps;
-            for (let i = 0; i < selectedFiles.length; i++) {
-                const percent = 15 + ((i / selectedFiles.length) * 85);
-                updateStatus(`Traitement de l'image ${i + 1} sur ${selectedFiles.length}...`, percent, true);
-                
-                const img = await loadImage(selectedFiles[i]);
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                
-                // Pause pour respecter le FPS demandé
-                await new Promise(resolve => setTimeout(resolve, frameDuration));
+    // Drag & Drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, () => uploadZone.classList.add('dragover'), false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadZone.addEventListener(eventName, () => uploadZone.classList.remove('dragover'), false);
+    });
+    
+    uploadZone.addEventListener('drop', (e) => {
+        const items = e.dataTransfer.items;
+        if (items) {
+            // Gestion spéciale pour les dossiers déposés
+            const files = [];
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i].webkitGetAsEntry && items[i].webkitGetAsEntry();
+                if (item) {
+                    traverseFileTree(item, files);
+                } else {
+                    files.push(items[i].getAsFile());
+                }
             }
-
-            mediaRecorder.stop();
-
-        } catch (error) {
-            console.error("Erreur de conversion :", error);
-            updateStatus('❌ Une erreur est survenue lors de la conversion.', 0, false);
-            convertBtn.disabled = false;
-            clearBtn.disabled = false;
+            // Note: traverseFileTree est asynchrone, donc on gère les fichiers dans la fonction récursive
+        } else {
+            handleWebmFiles(e.dataTransfer.files);
         }
+    }, false);
+
+    // Fonction récursive pour lire les dossiers
+    function traverseFileTree(item, filesArray) {
+        if (item.isFile) {
+            item.file((file) => {
+                if (ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                    filesArray.push(file);
+                }
+                // Si c'est le dernier fichier, on met à jour l'interface
+                // (Ceci est une simplification, idéalement on attendrait que tout soit lu)
+            });
+        } else if (item.isDirectory) {
+            const dirReader = item.createReader();
+            dirReader.readEntries((entries) => {
+                for (let i = 0; i < entries.length; i++) {
+                    traverseFileTree(entries[i], filesArray);
+                }
+            });
+        }
+    }
+    
+    // Input file
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => handleWebmFiles(e.target.files));
+    }
+    
+    // Bouton choisir fichiers
+    if (chooseFilesBtn) {
+        chooseFilesBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput && fileInput.click();
+        });
+    }
+    
+    uploadZone.addEventListener('click', () => {
+        fileInput && fileInput.click();
     });
 
-    // Bouton Effacer
-    clearBtn.addEventListener('click', () => {
-        selectedFiles = [];
-        fileInput.value = '';
-        fileListEl.style.display = 'none';
-        actionBar.style.display = 'none';
-        statusContainer.style.display = 'none';
-        convertBtn.disabled = true;
-        clearBtn.disabled = false;
-    });
-});
+    // Bouton convertir
+    if (convertBtn) {
+        convertBtn.addEventListener('click', startWebmConversion);
+    }
+    
+    // Bouton effacer
+    if (clearBtn) {
+        clearBtn.addEventListener('click', clearWebmConverter);
+    }
+    
+    console.log('✅ Page WebM Converter initialisée');
+}
+
+// Exporter la fonction
+if (typeof window !== 'undefined') {
+    window.initWebmConverterPage = initWebmConverterPage;
+}

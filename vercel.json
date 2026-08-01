@@ -3,7 +3,9 @@
   "rewrites": [
     { "source": "/accueil", "destination": "/index.html" },
     { "source": "/webp", "destination": "/webp.html" },
-    { "source": "/avif", "destination": "/avif.html" }
+    { "source": "/avif", "destination": "/avif.html" },
+    { "source": "/compression", "destination": "/compression.html" },
+    { "source": "/webm", "destination": "/webm-converter.html" }
   ],
   "headers": [
     {
@@ -12,6 +14,24 @@
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    },
+    {
+      "source": "/(.*\\.(js|css))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.html)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
       ]
     }
   ]
